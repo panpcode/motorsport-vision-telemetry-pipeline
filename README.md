@@ -13,7 +13,7 @@ GPS/IMU       ─► telemetry-producer ─────────────�
 - [x] CV worker: detection, road edges, optical flow, Kafka output
 - [x] Sample data with real telemetry (KITTI) + accuracy check
 - [x] Telemetry producer + live replay on a shared clock (`make demo`)
-- [ ] Go ingester (Kafka → ClickHouse)
+- [x] Go ingester (Kafka → ClickHouse) + joined view `frames_with_telemetry`
 - [ ] Grafana dashboard
 
 ## Quick start
@@ -29,9 +29,20 @@ make demo       # live replay: telemetry + CV events to Redpanda (SHOW=1 for pre
 
 ## How video and telemetry stay in sync
 
-Both streams carry their recorded timestamps. On replay, both services map them onto the same wall clock (`ts = start + (recorded − t0)`), with the same `run_id`, `start` and `t0` passed by `make demo`. Downstream they are joined by time (ClickHouse `ASOF JOIN`).
+Both streams carry their recorded timestamps. On replay, both services map them onto the same wall clock (`ts = start + (recorded − t0)`), with the same `run_id`, `start` and `t0` passed by `make demo`. The Go ingester writes both to ClickHouse, and the view `wrc.frames_with_telemetry` joins each frame to its nearest telemetry sample (`ASOF JOIN`).
 
-Measured on the KITTI sample: each frame lands within 1–13 ms of its telemetry sample. Kafka arrival lag is p50 4 ms for telemetry and p50 32 ms / p95 39 ms for CV events, which includes the processing time.
+Measured on the KITTI sample:
+
+| Step | Latency |
+|---|---|
+| Frame ↔ telemetry sample (sync gap) | 1–13 ms |
+| Telemetry producer → Kafka | p50 4 ms |
+| Frame time → CV event in Kafka (includes inference) | p50 32 ms, p95 39 ms |
+| Kafka → ClickHouse (Go ingester, 50 ms batches) | p50 12 ms, p95 ~15 ms |
+
+## Recording your own rally data
+
+`scripts/record_udp_telemetry.py` records raw UDP telemetry from a racing game (plain Python, no installs) while OBS records the onboard video. Packets are stored raw with the PC clock time and decoded later.
 
 UIs: Redpanda Console http://localhost:8080 · Grafana http://localhost:3000 (admin/admin)
 
