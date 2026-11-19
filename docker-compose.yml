@@ -1,0 +1,89 @@
+name: wrc-pipeline
+
+services:
+  # Kafka-compatible broker
+  redpanda:
+    image: redpandadata/redpanda:v24.2.7
+    command:
+      - redpanda start
+      - --mode dev-container
+      - --smp 1
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+    ports:
+      - "19092:19092"
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "health", "--exit-when-healthy"]
+      interval: 5s
+      retries: 20
+
+  # Create topics once the broker is up
+  redpanda-init:
+    image: redpandadata/redpanda:v24.2.7
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - rpk topic create wrc.cv.events wrc.telemetry -p 3 -X brokers=redpanda:9092 || true
+    restart: "no"
+
+  # Web UI for topics: http://localhost:8080
+  console:
+    image: redpandadata/console:v2.7.2
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports:
+      - "8080:8080"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    environment:
+      CLICKHOUSE_DB: wrc
+      CLICKHOUSE_USER: wrc
+      CLICKHOUSE_PASSWORD: wrc
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./infra/clickhouse:/docker-entrypoint-initdb.d:ro
+      - clickhouse-data:/var/lib/clickhouse
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--user", "wrc", "--password", "wrc", "-q", "SELECT 1"]
+      interval: 5s
+      retries: 20
+
+  # Local S3 for video clips
+  localstack:
+    image: localstack/localstack:3.8
+    environment:
+      SERVICES: s3
+      AWS_DEFAULT_REGION: eu-west-1
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./infra/localstack:/etc/localstack/init/ready.d:ro
+
+  # Dashboards: http://localhost:3000 (admin/admin)
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
+volumes:
+  clickhouse-data:
