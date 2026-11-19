@@ -2,5 +2,6 @@
 __pycache__/
 output/
 *.pt
-sample-data/*.mp4
+sample-data/*
+!sample-data/.gitkeep
 .DS_Store
