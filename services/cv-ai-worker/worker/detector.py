@@ -52,16 +52,18 @@ class HazardDetector:
             }
             detections.append(det)
 
-            if dist < self.hazard_dist_m and self._on_road((x1 + x2) / 2, w, road):
+            if dist < self.hazard_dist_m and self._on_road(x1, x2, y2, w, road):
                 det["hazard"] = True
                 hazards.append(det)
 
         return detections, hazards
 
     @staticmethod
-    def _on_road(cx, width, road):
-        # Use detected road edges if we have them, else the middle 60% of the frame
-        if road and road.get("left_x") is not None and road.get("right_x") is not None:
-            margin = 0.15 * (road["right_x"] - road["left_x"])
-            return road["left_x"] - margin <= cx <= road["right_x"] + margin
-        return 0.2 * width <= cx <= 0.8 * width
+    def _on_road(x1, x2, y_bottom, width, road):
+        # Road edges at the object's own height (where it touches the ground)
+        if road and road.get("left_line") and road.get("right_line"):
+            (ml, bl), (mr, br) = road["left_line"], road["right_line"]
+            left, right = ml * y_bottom + bl, mr * y_bottom + br
+            margin = 0.15 * (right - left)
+            return x2 > left - margin and x1 < right + margin  # box overlaps the road
+        return 0.2 * width <= (x1 + x2) / 2 <= 0.8 * width

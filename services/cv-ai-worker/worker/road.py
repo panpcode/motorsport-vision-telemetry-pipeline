@@ -31,7 +31,7 @@ class RoadTracker:
 
         left, right = [], []
         if lines is not None:
-            for x1, y1, x2, y2 in lines[:, 0]:
+            for x1, y1, x2, y2 in lines.reshape(-1, 4):  # shape differs in OpenCV 4 vs 5
                 if y1 == y2:
                     continue
                 m = (x2 - x1) / (y2 - y1)  # dx/dy
@@ -68,6 +68,7 @@ class RoadTracker:
         out = {
             "left_x": lx, "right_x": rx, "y_top": y_top, "y_bot": y_bot,
             "left_top": x_at(self.left, y_top), "right_top": x_at(self.right, y_top),
+            "left_line": self.left, "right_line": self.right,
             "confidence": (saw_left + saw_right) / 2,
             "lateral_offset": None,
         }
