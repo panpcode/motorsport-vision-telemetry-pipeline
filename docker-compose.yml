@@ -59,6 +59,19 @@ services:
       interval: 5s
       retries: 20
 
+  # Go service: Kafka -> ClickHouse
+  ingester:
+    build: ./services/telemetry-ingester
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+      CLICKHOUSE_ADDR: clickhouse:9000
+    depends_on:
+      redpanda-init:
+        condition: service_completed_successfully
+      clickhouse:
+        condition: service_healthy
+    restart: unless-stopped
+
   # Local S3 for video clips
   localstack:
     image: localstack/localstack:3.8
