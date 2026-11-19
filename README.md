@@ -12,7 +12,7 @@ GPS/IMU       ─► telemetry-producer ─────────────�
 - [x] Infra: Redpanda, ClickHouse, Grafana, LocalStack (`docker compose`)
 - [x] CV worker: detection, road edges, optical flow, Kafka output
 - [x] Sample data with real telemetry (KITTI) + accuracy check
-- [ ] Telemetry producer
+- [x] Telemetry producer + live replay on a shared clock (`make demo`)
 - [ ] Go ingester (Kafka → ClickHouse)
 - [ ] Grafana dashboard
 
@@ -24,8 +24,14 @@ make up         # infra containers
 make sample     # KITTI drive: front camera + GPS/IMU (~250 MB)
 make cv         # -> output/annotated.mp4 + output/events.jsonl
 make compare    # CV estimates vs real GPS/IMU
-make cv-kafka   # live mode, events to topic wrc.cv.events
+make demo       # live replay: telemetry + CV events to Redpanda (SHOW=1 for preview)
 ```
+
+## How video and telemetry stay in sync
+
+Both streams carry their recorded timestamps. On replay, both services map them onto the same wall clock (`ts = start + (recorded − t0)`), with the same `run_id`, `start` and `t0` passed by `make demo`. Downstream they are joined by time (ClickHouse `ASOF JOIN`).
+
+Measured on the KITTI sample: each frame lands within 1–13 ms of its telemetry sample. Kafka arrival lag is p50 4 ms for telemetry and p50 32 ms / p95 39 ms for CV events, which includes the processing time.
 
 UIs: Redpanda Console http://localhost:8080 · Grafana http://localhost:3000 (admin/admin)
 

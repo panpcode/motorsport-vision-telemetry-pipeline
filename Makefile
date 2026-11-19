@@ -5,7 +5,7 @@ CAM = --hfov 81 --cam-height 1.65
 PY = .venv/bin/python
 PYTHON ?= $(shell command -v python3.12 || echo python3)
 
-.PHONY: up down setup sample cv compare cv-kafka
+.PHONY: up down setup sample cv compare demo
 
 up:
 	docker compose up -d
@@ -31,7 +31,15 @@ cv:
 compare:
 	$(PY) scripts/compare_kitti.py output/events.jsonl --drive $(DRIVE)
 
-# Stream events to Redpanda in real time
-cv-kafka:
-	cd services/cv-ai-worker && ../../$(PY) -m worker.main ../../$(VIDEO) $(CAM) \
-		--kafka localhost:19092 --realtime --show
+# Source time of the first telemetry sample, shared by both services
+T0 = $(shell $(PY) -c "from datetime import datetime as d; print(d.strptime(open('$(DRIVE)/oxts/timestamps.txt').readline()[:26], '%Y-%m-%d %H:%M:%S.%f').timestamp()*1000)")
+
+# Live replay: telemetry + CV events to Redpanda on the same clock (SHOW=1 for a preview window)
+demo:
+	@START=$$(( $$(date +%s) * 1000 + 8000 )); RUN=run-$$(date +%H%M%S); echo "run_id=$$RUN"; \
+	$(PY) services/telemetry-producer/producer.py $(DRIVE) --kafka localhost:19092 \
+		--run-id $$RUN --start-ms $$START --t0-ms $(T0) & \
+	cd services/cv-ai-worker && ../../$(PY) -m worker.main ../../$(VIDEO) $(CAM) --kafka localhost:19092 \
+		--realtime --run-id $$RUN --start-ms $$START --t0-ms $(T0) \
+		--timestamps ../../$(DRIVE)/image_02/timestamps.txt $(if $(SHOW),--show); \
+	wait

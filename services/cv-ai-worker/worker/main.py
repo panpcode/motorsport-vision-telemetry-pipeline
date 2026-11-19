@@ -2,6 +2,7 @@ import argparse
 import json
 import time
 import uuid
+from datetime import datetime
 
 import cv2
 import numpy as np
@@ -11,6 +12,11 @@ from .draw import annotate
 from .flow import MotionEstimator
 from .road import RoadTracker, apex_distance
 from .sink import JsonlSink, KafkaSink
+
+
+def kitti_ts_ms(line):
+    # "2011-09-26 13:12:03.968689565" -> epoch ms
+    return datetime.strptime(line.strip()[:26], "%Y-%m-%d %H:%M:%S.%f").timestamp() * 1000
 
 
 def parse_args():
@@ -24,6 +30,10 @@ def parse_args():
     p.add_argument("--events", help="write events as JSON lines here")
     p.add_argument("--kafka", help="Kafka brokers, e.g. localhost:19092")
     p.add_argument("--topic", default="wrc.cv.events")
+    p.add_argument("--run-id", default=None)
+    p.add_argument("--timestamps", help="KITTI timestamps.txt with the real time of each frame")
+    p.add_argument("--start-ms", type=int, help="wall clock time of the first frame (default: now)")
+    p.add_argument("--t0-ms", type=float, help="source time that maps to --start-ms (default: first frame)")
     p.add_argument("--realtime", action="store_true", help="pace frames like a live stream")
     p.add_argument("--show", action="store_true", help="open a preview window")
     p.add_argument("--max-frames", type=int, default=0)
@@ -52,8 +62,15 @@ def main():
     if args.out:
         writer = cv2.VideoWriter(args.out, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
 
-    run_id = uuid.uuid4().hex[:8]
-    start_wall = time.time()
+    run_id = args.run_id or uuid.uuid4().hex[:8]
+
+    # Source time of each frame: from the timestamps file, else from fps
+    if args.timestamps:
+        frame_src_ms = [kitti_ts_ms(s) for s in open(args.timestamps) if s.strip()]
+    else:
+        frame_src_ms = None
+    t0 = args.t0_ms if args.t0_ms is not None else (frame_src_ms[0] if frame_src_ms else 0.0)
+    start_ms = args.start_ms or int(time.time() * 1000)
     infer_times, loop_times = [], []
     idx = 0
 
@@ -61,7 +78,7 @@ def main():
         ok, frame = cap.read()
         if not ok or (args.max_frames and idx >= args.max_frames):
             break
-        t0 = time.perf_counter()
+        t_loop = time.perf_counter()
 
         road = road_tracker.update(frame)
         t_inf = time.perf_counter()
@@ -69,8 +86,9 @@ def main():
         infer_ms = (time.perf_counter() - t_inf) * 1000
         mot = motion.update(frame, ignore_boxes=[d["bbox"] for d in detections])
 
-        # Video time is the event time, so it lines up with telemetry later
-        ts_ms = int(start_wall * 1000 + idx * 1000 / fps)
+        # Recorded frame time, shifted to the replay clock (same rule as the telemetry producer)
+        src_ms = frame_src_ms[idx] if frame_src_ms else t0 + idx * 1000 / fps
+        ts_ms = int(start_ms + (src_ms - t0))
         event = {
             "run_id": run_id,
             "frame_idx": idx,
@@ -89,7 +107,7 @@ def main():
         for s in sinks:
             s.send(event)
 
-        loop_ms = (time.perf_counter() - t0) * 1000
+        loop_ms = (time.perf_counter() - t_loop) * 1000
         infer_times.append(infer_ms)
         loop_times.append(loop_ms)
 
@@ -103,12 +121,13 @@ def main():
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
 
-        if args.realtime:
-            # Wait until this frame's slot in "live" time
-            delay = start_wall + (idx + 1) / fps - time.time()
+        idx += 1
+        if args.realtime and (not frame_src_ms or idx < len(frame_src_ms)):
+            # Wait until the next frame's slot in "live" time
+            next_ms = frame_src_ms[idx] if frame_src_ms else t0 + idx * 1000 / fps
+            delay = (start_ms + next_ms - t0) / 1000 - time.time()
             if delay > 0:
                 time.sleep(delay)
-        idx += 1
 
     cap.release()
     if writer:

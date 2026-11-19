@@ -1,16 +1,19 @@
--- Car telemetry (from the producer)
+-- Car telemetry (from the producer). Columns a dataset doesn't have stay NULL.
 CREATE TABLE IF NOT EXISTS wrc.telemetry
 (
-    run_id      LowCardinality(String),
-    ts          DateTime64(3),
-    speed_kmh   Float32,
-    rpm         UInt16,
-    gear        UInt8,
-    throttle    Float32,
-    brake       Float32,
-    steering    Float32,
-    lat         Float64,
-    lon         Float64
+    run_id          LowCardinality(String),
+    ts              DateTime64(3),
+    speed_kmh       Float32,
+    yaw_rate_deg_s  Nullable(Float32),
+    accel_long      Nullable(Float32),  -- m/s^2, + = accelerating
+    accel_lat       Nullable(Float32),  -- m/s^2, + = to the left
+    heading_deg     Nullable(Float32),
+    lat             Nullable(Float64),
+    lon             Nullable(Float64),
+    alt             Nullable(Float32),
+    steering_deg    Nullable(Float32),
+    throttle        Nullable(Float32),
+    brake           Nullable(Float32)
 )
 ENGINE = MergeTree
 ORDER BY (run_id, ts);
