@@ -14,7 +14,7 @@ GPS/IMU       ─► telemetry-producer ─────────────�
 - [x] Sample data with real telemetry (KITTI) + accuracy check
 - [x] Telemetry producer + live replay on a shared clock (`make demo`)
 - [x] Go ingester (Kafka → ClickHouse) + joined view `frames_with_telemetry`
-- [ ] Grafana dashboard
+- [x] Grafana dashboard (auto-provisioned, live refresh)
 
 ## Quick start
 
@@ -44,7 +44,9 @@ Measured on the KITTI sample:
 
 `scripts/record_udp_telemetry.py` records raw UDP telemetry from a racing game (plain Python, no installs) while OBS records the onboard video. Packets are stored raw with the PC clock time and decoded later.
 
-UIs: Redpanda Console http://localhost:8080 · Grafana http://localhost:3000 (admin/admin)
+UIs: Grafana dashboard http://localhost:3000 (opens on the WRC dashboard, no login) · Redpanda Console http://localhost:8080
+
+Run `make demo` and watch the dashboard update live (pick the newest run in the *Run* dropdown).
 
 > The CV worker runs natively, not in Docker, so it can use the Apple Silicon GPU (MPS).
 

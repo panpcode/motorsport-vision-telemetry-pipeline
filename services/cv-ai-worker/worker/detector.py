@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 import torch
 from ultralytics import YOLO
 
@@ -28,6 +29,11 @@ class HazardDetector:
         self.conf = conf
         self.hazard_dist_m = hazard_dist_m
         self.classes = [i for i, n in self.model.names.items() if n in REAL_HEIGHT_M]
+
+    def warmup(self, width, height):
+        # First GPU inference for a frame size is slow (kernel setup), so do it before real frames
+        for _ in range(2):
+            self.model.predict(np.zeros((height, width, 3), np.uint8), device=self.device, verbose=False)
 
     def focal_px(self, width):
         return (width / 2) / math.tan(self.hfov / 2)

@@ -49,6 +49,7 @@ def main():
     w, h = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     detector = HazardDetector(args.model, hfov_deg=args.hfov, device=args.device)
+    detector.warmup(w, h)
     road_tracker = RoadTracker()
     motion = MotionEstimator(fps, hfov_deg=args.hfov, cam_height_m=args.cam_height)
     print(f"video {w}x{h} @ {fps:.0f}fps, device={detector.device}")
