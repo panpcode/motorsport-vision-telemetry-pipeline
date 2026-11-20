@@ -33,7 +33,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("drive", help="KITTI drive folder")
     p.add_argument("--kafka", help="brokers, e.g. localhost:19092 (else print JSON)")
-    p.add_argument("--topic", default="wrc.telemetry")
+    p.add_argument("--topic", default="motorsport.telemetry")
     p.add_argument("--run-id", default="dev")
     p.add_argument("--start-ms", type=int, help="wall clock time of the first sample (default: now)")
     p.add_argument("--t0-ms", type=float, help="source time that maps to --start-ms (default: first sample)")

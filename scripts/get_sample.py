@@ -13,7 +13,7 @@ import zlib
 import cv2
 
 BASE = "https://s3.eu-central-1.amazonaws.com/avg-kitti/raw_data"
-UA = {"User-Agent": "wrc-pipeline-sample/0.1"}
+UA = {"User-Agent": "motorsport-pipeline-sample/0.1"}
 
 
 class HttpFile(io.RawIOBase):

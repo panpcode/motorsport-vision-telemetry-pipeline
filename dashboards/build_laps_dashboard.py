@@ -40,9 +40,9 @@ def map_sql(col, cond):
     # Mini-sectors of 200 m: points of the track where this driver gained time
     return f"""WITH ms AS (
     SELECT intDiv(toUInt32(distance_m), 200) AS m, argMax(delta_s, distance_m) - argMin(delta_s, distance_m) AS gain
-    FROM wrc.lap_grid WHERE {CMP} GROUP BY m)
+    FROM motorsport.lap_grid WHERE {CMP} GROUP BY m)
 SELECT g.x AS x, g.y AS {col}
-FROM wrc.lap_grid g JOIN ms ON intDiv(toUInt32(g.distance_m), 200) = ms.m
+FROM motorsport.lap_grid g JOIN ms ON intDiv(toUInt32(g.distance_m), 200) = ms.m
 WHERE g.{CMP} AND ms.gain {cond} ORDER BY g.distance_m"""
 
 
@@ -69,27 +69,27 @@ can swing inside slow corners. Corner totals are the reliable part."""
 panels = [
     # Row 1: headline numbers
     text_stat("Lap gap (${b} to ${a})",
-              f"SELECT concat(toString(round(argMax(delta_s, distance_m), 3)), ' s') FROM wrc.lap_grid WHERE {CMP}", 0, 6),
+              f"SELECT concat(toString(round(argMax(delta_s, distance_m), 3)), ' s') FROM motorsport.lap_grid WHERE {CMP}", 0, 6),
     text_stat("Biggest single gain",
               f"""SELECT concat(faster, ' +', toString(round(abs(time_diff_s), 3)), ' s in C', toString(corner))
-FROM wrc.lap_corners WHERE {CMP} ORDER BY abs(time_diff_s) DESC LIMIT 1""", 6, 10),
+FROM motorsport.lap_corners WHERE {CMP} ORDER BY abs(time_diff_s) DESC LIMIT 1""", 6, 10),
     text_stat("Corners won (${a} / ${b})",
               f"""SELECT concat(toString(countIf(time_diff_s > 0)), ' / ', toString(countIf(time_diff_s < 0)))
-FROM wrc.lap_corners WHERE {CMP}""", 16, 8),
+FROM motorsport.lap_corners WHERE {CMP}""", 16, 8),
 
     # Left column: traces by distance
     trend("Gap by distance (above 0: ${a} ahead)",
-          f"SELECT distance_m, delta_s FROM wrc.lap_grid WHERE {CMP} ORDER BY distance_m", 4, 7, unit="s",
+          f"SELECT distance_m, delta_s FROM motorsport.lap_grid WHERE {CMP} ORDER BY distance_m", 4, 7, unit="s",
           overrides=[rename("delta_s", "Gap ${b} to ${a}", "purple")],
           field={"custom": {"lineWidth": 2, "fillOpacity": 20, "gradientMode": "opacity"}}),
     trend("Speed",
-          f"SELECT distance_m, speed_a, speed_b FROM wrc.lap_grid WHERE {CMP} ORDER BY distance_m", 11, 8, unit="velocitykmh",
+          f"SELECT distance_m, speed_a, speed_b FROM motorsport.lap_grid WHERE {CMP} ORDER BY distance_m", 11, 8, unit="velocitykmh",
           overrides=[rename("speed_a", "${a}", A), rename("speed_b", "${b}", B)]),
     trend("Throttle",
-          f"SELECT distance_m, throttle_a, throttle_b FROM wrc.lap_grid WHERE {CMP} ORDER BY distance_m", 19, 5, unit="percent",
+          f"SELECT distance_m, throttle_a, throttle_b FROM motorsport.lap_grid WHERE {CMP} ORDER BY distance_m", 19, 5, unit="percent",
           overrides=[rename("throttle_a", "${a}", A), rename("throttle_b", "${b}", B)]),
     trend("Brake",
-          f"SELECT distance_m, brake_a, brake_b * -1 AS brake_b FROM wrc.lap_grid WHERE {CMP} ORDER BY distance_m", 24, 4,
+          f"SELECT distance_m, brake_a, brake_b * -1 AS brake_b FROM motorsport.lap_grid WHERE {CMP} ORDER BY distance_m", 24, 4,
           overrides=[rename("brake_a", "${a}", A), rename("brake_b", "${b} (shown below 0)", B),
                      limits("brake_a", -1, 1), limits("brake_b", -1, 1)],
           field={"custom": {"lineWidth": 1, "fillOpacity": 60, "lineInterpolation": "stepAfter", "axisPlacement": "hidden"}}),
@@ -101,22 +101,22 @@ FROM wrc.lap_corners WHERE {CMP}""", 16, 8),
     panel("Where time was won", "table",
           f"""SELECT corner AS C, round(apex_m) AS at_m, faster, round(abs(time_diff_s), 3) AS gain_s, why,
        round(min_speed_a) AS min_kmh_${{a}}, round(min_speed_b) AS min_kmh_${{b}}
-FROM wrc.lap_corners WHERE {CMP} ORDER BY corner""", 0, 28, 24, 9, fmt="table",
+FROM motorsport.lap_corners WHERE {CMP} ORDER BY corner""", 0, 28, 24, 9, fmt="table",
           overrides=[{"matcher": {"id": "byName", "options": n}, "properties": [{"id": "custom.width", "value": w}]}
                      for n, w in [("C", 50), ("at_m", 80), ("faster", 80), ("gain_s", 80)]]
           + [{"matcher": {"id": "byName", "options": "gain_s"}, "properties": [{"id": "decimals", "value": 3}]}]),
 ]
 
 dashboard = {
-    "uid": "wrc-laps",
+    "uid": "motorsport-laps",
     "title": "Lap Comparison",
-    "tags": ["wrc", "laps"],
+    "tags": ["motorsport", "laps"],
     "schemaVersion": 39,
     "time": {"from": "now-1h", "to": "now"},
     "templating": {"list": [
-        var("comparison", "SELECT comparison FROM wrc.lap_grid GROUP BY comparison ORDER BY comparison", label="Comparison"),
-        var("a", f"SELECT any(driver_a) FROM wrc.lap_grid WHERE {CMP}", hide=2),
-        var("b", f"SELECT any(driver_b) FROM wrc.lap_grid WHERE {CMP}", hide=2),
+        var("comparison", "SELECT comparison FROM motorsport.lap_grid GROUP BY comparison ORDER BY comparison", label="Comparison"),
+        var("a", f"SELECT any(driver_a) FROM motorsport.lap_grid WHERE {CMP}", hide=2),
+        var("b", f"SELECT any(driver_b) FROM motorsport.lap_grid WHERE {CMP}", hide=2),
     ]},
     "panels": panels,
 }

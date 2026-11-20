@@ -1,6 +1,6 @@
-# wrc-vision-telemetry-pipeline
+# motorsport-vision-telemetry-pipeline
 
-Turns onboard video into structured, real-time data: hazard detection, road position, yaw/slip and speed estimated from the image alone, streamed next to car telemetry and checked against real GPS/IMU.
+Data tools for motorsport (rally, circuit racing): onboard video turned into real-time data (hazards, road position, yaw/slip and speed from the image alone) streamed next to car telemetry, plus lap comparison that shows where a driver gains or loses time.
 
 ```
 camera frames ─► cv-ai-worker (YOLOv8 + OpenCV) ─► Redpanda ─► ingester (Go) ─► ClickHouse ─► Grafana
@@ -31,7 +31,7 @@ make laps       # real F1 laps compared: VER vs NOR, Abu Dhabi 2025 quali
 
 ## How video and telemetry stay in sync
 
-Both streams carry their recorded timestamps. On replay, both services map them onto the same wall clock (`ts = start + (recorded − t0)`), with the same `run_id`, `start` and `t0` passed by `make demo`. The Go ingester writes both to ClickHouse, and the view `wrc.frames_with_telemetry` joins each frame to its nearest telemetry sample (`ASOF JOIN`).
+Both streams carry their recorded timestamps. On replay, both services map them onto the same wall clock (`ts = start + (recorded − t0)`), with the same `run_id`, `start` and `t0` passed by `make demo`. The Go ingester writes both to ClickHouse, and the view `motorsport.frames_with_telemetry` joins each frame to its nearest telemetry sample (`ASOF JOIN`).
 
 Measured on the KITTI sample:
 
@@ -75,7 +75,7 @@ Data: [OpenF1](https://openf1.org) (free historical data, no account). FastF1 ne
 
 `scripts/record_udp_telemetry.py` records raw UDP telemetry from a racing game (plain Python, no installs) while OBS records the onboard video. Packets are stored raw with the PC clock time and decoded later.
 
-UIs: Grafana http://localhost:3000 (WRC dashboard + Lap Comparison, no login) · Redpanda Console http://localhost:8080
+UIs: Grafana http://localhost:3000 (Vision + Telemetry and Lap Comparison dashboards, no login) · Redpanda Console http://localhost:8080
 
 Run `make demo` and watch the dashboard update live (pick the newest run in the *Run* dropdown).
 

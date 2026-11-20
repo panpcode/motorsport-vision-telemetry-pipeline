@@ -9,7 +9,7 @@ datasources:
       host: clickhouse
       port: 9000
       protocol: native
-      username: wrc
-      defaultDatabase: wrc
+      username: motorsport
+      defaultDatabase: motorsport
     secureJsonData:
-      password: wrc
+      password: motorsport

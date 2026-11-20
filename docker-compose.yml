@@ -1,4 +1,4 @@
-name: wrc-pipeline
+name: motorsport-pipeline
 
 services:
   # Kafka-compatible broker
@@ -25,7 +25,7 @@ services:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - rpk topic create wrc.cv.events wrc.telemetry -p 3 -X brokers=redpanda:9092 || true
+      - rpk topic create motorsport.cv.events motorsport.telemetry -p 3 -X brokers=redpanda:9092 || true
     restart: "no"
 
   # Web UI for topics: http://localhost:8080
@@ -42,9 +42,9 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:24.8
     environment:
-      CLICKHOUSE_DB: wrc
-      CLICKHOUSE_USER: wrc
-      CLICKHOUSE_PASSWORD: wrc
+      CLICKHOUSE_DB: motorsport
+      CLICKHOUSE_USER: motorsport
+      CLICKHOUSE_PASSWORD: motorsport
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
     ports:
       - "8123:8123"
@@ -55,7 +55,7 @@ services:
     ulimits:
       nofile: { soft: 262144, hard: 262144 }
     healthcheck:
-      test: ["CMD", "clickhouse-client", "--user", "wrc", "--password", "wrc", "-q", "SELECT 1"]
+      test: ["CMD", "clickhouse-client", "--user", "motorsport", "--password", "motorsport", "-q", "SELECT 1"]
       interval: 5s
       retries: 20
 
@@ -92,7 +92,7 @@ services:
       # Local demo: dashboards viewable without login (read-only)
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/wrc_telemetry.json
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/motorsport_telemetry.json
     ports:
       - "3000:3000"
     volumes:

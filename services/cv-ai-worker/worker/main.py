@@ -20,7 +20,7 @@ def kitti_ts_ms(line):
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="WRC onboard video -> CV events")
+    p = argparse.ArgumentParser(description="Onboard video -> CV events")
     p.add_argument("video", help="path to onboard .mp4")
     p.add_argument("--model", default="yolov8n.pt")
     p.add_argument("--device", default=None, help="mps / cuda / cpu (auto if empty)")
@@ -29,7 +29,7 @@ def parse_args():
     p.add_argument("--out", help="write annotated video here")
     p.add_argument("--events", help="write events as JSON lines here")
     p.add_argument("--kafka", help="Kafka brokers, e.g. localhost:19092")
-    p.add_argument("--topic", default="wrc.cv.events")
+    p.add_argument("--topic", default="motorsport.cv.events")
     p.add_argument("--run-id", default=None)
     p.add_argument("--timestamps", help="KITTI timestamps.txt with the real time of each frame")
     p.add_argument("--start-ms", type=int, help="wall clock time of the first frame (default: now)")
@@ -118,7 +118,7 @@ def main():
             if writer:
                 writer.write(vis)
             if args.show:
-                cv2.imshow("wrc-cv", vis)
+                cv2.imshow("motorsport-cv", vis)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
 

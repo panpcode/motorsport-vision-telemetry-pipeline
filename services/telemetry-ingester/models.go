@@ -2,7 +2,7 @@ package main
 
 import "encoding/json"
 
-// Message from topic wrc.telemetry (pointer = may be null)
+// Message from topic motorsport.telemetry (pointer = may be null)
 type Telemetry struct {
 	RunID       string   `json:"run_id"`
 	TsMs        int64    `json:"ts_ms"`
@@ -19,7 +19,7 @@ type Telemetry struct {
 	Brake       *float32 `json:"brake"`
 }
 
-// Message from topic wrc.cv.events
+// Message from topic motorsport.cv.events
 type CVEvent struct {
 	RunID          string          `json:"run_id"`
 	FrameIdx       uint32          `json:"frame_idx"`

@@ -1,5 +1,5 @@
 -- Lap comparison: two laps on a common distance grid (one row every 5 m)
-CREATE TABLE IF NOT EXISTS wrc.lap_grid
+CREATE TABLE IF NOT EXISTS motorsport.lap_grid
 (
     comparison  LowCardinality(String),
     driver_a    LowCardinality(String),
@@ -21,7 +21,7 @@ ENGINE = ReplacingMergeTree
 ORDER BY (comparison, distance_m);
 
 -- Where time was gained or lost, one row per corner
-CREATE TABLE IF NOT EXISTS wrc.lap_corners
+CREATE TABLE IF NOT EXISTS motorsport.lap_corners
 (
     comparison   LowCardinality(String),
     corner       UInt8,

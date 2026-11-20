@@ -1,6 +1,6 @@
 -- Each video frame joined with its nearest telemetry sample.
 -- The +50 ms lets a frame match a sample recorded just after it (samples are ~100 ms apart).
-CREATE VIEW IF NOT EXISTS wrc.frames_with_telemetry AS
+CREATE VIEW IF NOT EXISTS motorsport.frames_with_telemetry AS
 SELECT
     c.run_id AS run_id,
     c.ts AS ts,
@@ -19,5 +19,5 @@ SELECT
     c.apex_dist AS apex_dist,
     t.lat AS lat,
     t.lon AS lon
-FROM (SELECT *, ts + toIntervalMillisecond(50) AS ts_match FROM wrc.cv_events) AS c
-ASOF JOIN wrc.telemetry AS t ON c.run_id = t.run_id AND c.ts_match >= t.ts;
+FROM (SELECT *, ts + toIntervalMillisecond(50) AS ts_match FROM motorsport.cv_events) AS c
+ASOF JOIN motorsport.telemetry AS t ON c.run_id = t.run_id AND c.ts_match >= t.ts;

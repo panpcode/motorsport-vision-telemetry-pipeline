@@ -1,5 +1,5 @@
 -- Car telemetry (from the producer). Columns a dataset doesn't have stay NULL.
-CREATE TABLE IF NOT EXISTS wrc.telemetry
+CREATE TABLE IF NOT EXISTS motorsport.telemetry
 (
     run_id          LowCardinality(String),
     ts              DateTime64(3),
@@ -19,7 +19,7 @@ ENGINE = MergeTree
 ORDER BY (run_id, ts);
 
 -- One row per processed video frame (from the CV worker)
-CREATE TABLE IF NOT EXISTS wrc.cv_events
+CREATE TABLE IF NOT EXISTS motorsport.cv_events
 (
     run_id            LowCardinality(String),
     ts                DateTime64(3),

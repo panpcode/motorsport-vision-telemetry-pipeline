@@ -1,4 +1,4 @@
-module github.com/wrc-vision-telemetry-pipeline/telemetry-ingester
+module github.com/panpcode/motorsport-vision-telemetry-pipeline/telemetry-ingester
 
 go 1.25
 

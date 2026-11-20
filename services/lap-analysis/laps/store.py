@@ -6,7 +6,7 @@ import urllib.request
 
 
 class ClickHouse:
-    def __init__(self, url="http://localhost:8123", user="wrc", password="wrc"):
+    def __init__(self, url="http://localhost:8123", user="motorsport", password="motorsport"):
         self.url = url
         self.auth = "Basic " + base64.b64encode(f"{user}:{password}".encode()).decode()
 
@@ -28,10 +28,10 @@ def save(res, comparison, ch=None):
     ch = ch or ClickHouse()
     a, b, delta = res["a"], res["b"], res["delta"]
     A, B = res["lap_a"]["driver"], res["lap_b"]["driver"]
-    for table in ("wrc.lap_grid", "wrc.lap_corners"):  # re-running replaces the old rows
+    for table in ("motorsport.lap_grid", "motorsport.lap_corners"):  # re-running replaces the old rows
         ch.run(f"DELETE FROM {table} WHERE comparison = '{comparison}'")
 
-    ch.insert("wrc.lap_grid", [{
+    ch.insert("motorsport.lap_grid", [{
         "comparison": comparison, "driver_a": A, "driver_b": B,
         "distance_m": float(a["d"][i]), "delta_s": float(delta[i]),
         "speed_a": float(a["speed"][i]), "speed_b": float(b["speed"][i]),
@@ -41,7 +41,7 @@ def save(res, comparison, ch=None):
         "x": float(a["x"][i]), "y": float(a["y"][i]),
     } for i in range(len(a["d"]))])
 
-    ch.insert("wrc.lap_corners", [{
+    ch.insert("motorsport.lap_corners", [{
         "comparison": comparison, "corner": c["corner"], "apex_m": c["apex_m"],
         "time_diff_s": c["time_diff_s"],
         "faster": c["faster"], "why": c["why"],

@@ -1,8 +1,8 @@
 {
-  "uid": "wrc-laps",
+  "uid": "motorsport-laps",
   "title": "Lap Comparison",
   "tags": [
-    "wrc",
+    "motorsport",
     "laps"
   ],
   "schemaVersion": 39,
@@ -20,8 +20,8 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "query": "SELECT comparison FROM wrc.lap_grid GROUP BY comparison ORDER BY comparison",
-        "definition": "SELECT comparison FROM wrc.lap_grid GROUP BY comparison ORDER BY comparison",
+        "query": "SELECT comparison FROM motorsport.lap_grid GROUP BY comparison ORDER BY comparison",
+        "definition": "SELECT comparison FROM motorsport.lap_grid GROUP BY comparison ORDER BY comparison",
         "refresh": 1,
         "hide": 0,
         "current": {},
@@ -35,8 +35,8 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "query": "SELECT any(driver_a) FROM wrc.lap_grid WHERE comparison = '${comparison}'",
-        "definition": "SELECT any(driver_a) FROM wrc.lap_grid WHERE comparison = '${comparison}'",
+        "query": "SELECT any(driver_a) FROM motorsport.lap_grid WHERE comparison = '${comparison}'",
+        "definition": "SELECT any(driver_a) FROM motorsport.lap_grid WHERE comparison = '${comparison}'",
         "refresh": 1,
         "hide": 2,
         "current": {},
@@ -50,8 +50,8 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "query": "SELECT any(driver_b) FROM wrc.lap_grid WHERE comparison = '${comparison}'",
-        "definition": "SELECT any(driver_b) FROM wrc.lap_grid WHERE comparison = '${comparison}'",
+        "query": "SELECT any(driver_b) FROM motorsport.lap_grid WHERE comparison = '${comparison}'",
+        "definition": "SELECT any(driver_b) FROM motorsport.lap_grid WHERE comparison = '${comparison}'",
         "refresh": 1,
         "hide": 2,
         "current": {},
@@ -82,7 +82,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT concat(toString(round(argMax(delta_s, distance_m), 3)), ' s') FROM wrc.lap_grid WHERE comparison = '${comparison}'",
+          "rawSql": "SELECT concat(toString(round(argMax(delta_s, distance_m), 3)), ' s') FROM motorsport.lap_grid WHERE comparison = '${comparison}'",
           "format": 1,
           "queryType": "table"
         }
@@ -131,7 +131,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT concat(faster, ' +', toString(round(abs(time_diff_s), 3)), ' s in C', toString(corner))\nFROM wrc.lap_corners WHERE comparison = '${comparison}' ORDER BY abs(time_diff_s) DESC LIMIT 1",
+          "rawSql": "SELECT concat(faster, ' +', toString(round(abs(time_diff_s), 3)), ' s in C', toString(corner))\nFROM motorsport.lap_corners WHERE comparison = '${comparison}' ORDER BY abs(time_diff_s) DESC LIMIT 1",
           "format": 1,
           "queryType": "table"
         }
@@ -180,7 +180,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT concat(toString(countIf(time_diff_s > 0)), ' / ', toString(countIf(time_diff_s < 0)))\nFROM wrc.lap_corners WHERE comparison = '${comparison}'",
+          "rawSql": "SELECT concat(toString(countIf(time_diff_s > 0)), ' / ', toString(countIf(time_diff_s < 0)))\nFROM motorsport.lap_corners WHERE comparison = '${comparison}'",
           "format": 1,
           "queryType": "table"
         }
@@ -229,7 +229,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT distance_m, delta_s FROM wrc.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
+          "rawSql": "SELECT distance_m, delta_s FROM motorsport.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
           "format": 1,
           "queryType": "table"
         }
@@ -315,7 +315,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT distance_m, speed_a, speed_b FROM wrc.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
+          "rawSql": "SELECT distance_m, speed_a, speed_b FROM motorsport.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
           "format": 1,
           "queryType": "table"
         }
@@ -419,7 +419,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT distance_m, throttle_a, throttle_b FROM wrc.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
+          "rawSql": "SELECT distance_m, throttle_a, throttle_b FROM motorsport.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
           "format": 1,
           "queryType": "table"
         }
@@ -523,7 +523,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT distance_m, brake_a, brake_b * -1 AS brake_b FROM wrc.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
+          "rawSql": "SELECT distance_m, brake_a, brake_b * -1 AS brake_b FROM motorsport.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
           "format": 1,
           "queryType": "table"
         }
@@ -660,7 +660,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "WITH ms AS (\n    SELECT intDiv(toUInt32(distance_m), 200) AS m, argMax(delta_s, distance_m) - argMin(delta_s, distance_m) AS gain\n    FROM wrc.lap_grid WHERE comparison = '${comparison}' GROUP BY m)\nSELECT g.x AS x, g.y AS a_faster\nFROM wrc.lap_grid g JOIN ms ON intDiv(toUInt32(g.distance_m), 200) = ms.m\nWHERE g.comparison = '${comparison}' AND ms.gain > 0 ORDER BY g.distance_m",
+          "rawSql": "WITH ms AS (\n    SELECT intDiv(toUInt32(distance_m), 200) AS m, argMax(delta_s, distance_m) - argMin(delta_s, distance_m) AS gain\n    FROM motorsport.lap_grid WHERE comparison = '${comparison}' GROUP BY m)\nSELECT g.x AS x, g.y AS a_faster\nFROM motorsport.lap_grid g JOIN ms ON intDiv(toUInt32(g.distance_m), 200) = ms.m\nWHERE g.comparison = '${comparison}' AND ms.gain > 0 ORDER BY g.distance_m",
           "format": 1,
           "queryType": "table"
         },
@@ -671,7 +671,7 @@
           },
           "refId": "B",
           "editorType": "sql",
-          "rawSql": "WITH ms AS (\n    SELECT intDiv(toUInt32(distance_m), 200) AS m, argMax(delta_s, distance_m) - argMin(delta_s, distance_m) AS gain\n    FROM wrc.lap_grid WHERE comparison = '${comparison}' GROUP BY m)\nSELECT g.x AS x, g.y AS b_faster\nFROM wrc.lap_grid g JOIN ms ON intDiv(toUInt32(g.distance_m), 200) = ms.m\nWHERE g.comparison = '${comparison}' AND ms.gain <= 0 ORDER BY g.distance_m",
+          "rawSql": "WITH ms AS (\n    SELECT intDiv(toUInt32(distance_m), 200) AS m, argMax(delta_s, distance_m) - argMin(delta_s, distance_m) AS gain\n    FROM motorsport.lap_grid WHERE comparison = '${comparison}' GROUP BY m)\nSELECT g.x AS x, g.y AS b_faster\nFROM motorsport.lap_grid g JOIN ms ON intDiv(toUInt32(g.distance_m), 200) = ms.m\nWHERE g.comparison = '${comparison}' AND ms.gain <= 0 ORDER BY g.distance_m",
           "format": 1,
           "queryType": "table"
         }
@@ -811,7 +811,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT corner AS C, round(apex_m) AS at_m, faster, round(abs(time_diff_s), 3) AS gain_s, why,\n       round(min_speed_a) AS min_kmh_${a}, round(min_speed_b) AS min_kmh_${b}\nFROM wrc.lap_corners WHERE comparison = '${comparison}' ORDER BY corner",
+          "rawSql": "SELECT corner AS C, round(apex_m) AS at_m, faster, round(abs(time_diff_s), 3) AS gain_s, why,\n       round(min_speed_a) AS min_kmh_${a}, round(min_speed_b) AS min_kmh_${b}\nFROM motorsport.lap_corners WHERE comparison = '${comparison}' ORDER BY corner",
           "format": 1,
           "queryType": "table"
         }

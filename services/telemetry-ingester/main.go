@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	topicTelemetry = "wrc.telemetry"
-	topicCV        = "wrc.cv.events"
+	topicTelemetry = "motorsport.telemetry"
+	topicCV        = "motorsport.cv.events"
 )
 
 func env(key, def string) string {
@@ -38,9 +38,9 @@ func main() {
 	ch, err := clickhouse.Open(&clickhouse.Options{
 		Addr: []string{env("CLICKHOUSE_ADDR", "localhost:9000")},
 		Auth: clickhouse.Auth{
-			Database: env("CLICKHOUSE_DB", "wrc"),
-			Username: env("CLICKHOUSE_USER", "wrc"),
-			Password: env("CLICKHOUSE_PASSWORD", "wrc"),
+			Database: env("CLICKHOUSE_DB", "motorsport"),
+			Username: env("CLICKHOUSE_USER", "motorsport"),
+			Password: env("CLICKHOUSE_PASSWORD", "motorsport"),
 		},
 	})
 	if err != nil {
@@ -52,7 +52,7 @@ func main() {
 
 	kc, err := kgo.NewClient(
 		kgo.SeedBrokers(strings.Split(env("KAFKA_BROKERS", "localhost:19092"), ",")...),
-		kgo.ConsumerGroup(env("KAFKA_GROUP", "wrc-ingester")),
+		kgo.ConsumerGroup(env("KAFKA_GROUP", "motorsport-ingester")),
 		kgo.ConsumeTopics(topicTelemetry, topicCV),
 		kgo.DisableAutoCommit(), // commit only after ClickHouse has the rows
 	)

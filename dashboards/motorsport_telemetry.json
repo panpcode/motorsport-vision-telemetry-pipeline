@@ -1,8 +1,8 @@
 {
-  "uid": "wrc-telemetry",
-  "title": "WRC Vision + Telemetry",
+  "uid": "motorsport-telemetry",
+  "title": "Motorsport Vision + Telemetry",
   "tags": [
-    "wrc",
+    "motorsport",
     "telemetry",
     "computer-vision"
   ],
@@ -23,8 +23,8 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "query": "SELECT run_id FROM wrc.cv_events GROUP BY run_id ORDER BY max(ts) DESC",
-        "definition": "SELECT run_id FROM wrc.cv_events GROUP BY run_id ORDER BY max(ts) DESC",
+        "query": "SELECT run_id FROM motorsport.cv_events GROUP BY run_id ORDER BY max(ts) DESC",
+        "definition": "SELECT run_id FROM motorsport.cv_events GROUP BY run_id ORDER BY max(ts) DESC",
         "refresh": 2,
         "current": {},
         "options": []
@@ -54,7 +54,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT speed_kmh FROM wrc.telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts DESC LIMIT 1",
+          "rawSql": "SELECT speed_kmh FROM motorsport.telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts DESC LIMIT 1",
           "format": 1,
           "queryType": "table"
         }
@@ -110,7 +110,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT cv_speed_kmh FROM wrc.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts DESC LIMIT 1",
+          "rawSql": "SELECT cv_speed_kmh FROM motorsport.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts DESC LIMIT 1",
           "format": 1,
           "queryType": "table"
         }
@@ -166,7 +166,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT n_hazards FROM wrc.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts DESC LIMIT 1",
+          "rawSql": "SELECT n_hazards FROM motorsport.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts DESC LIMIT 1",
           "format": 1,
           "queryType": "table"
         }
@@ -230,7 +230,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT min_hazard_dist_m FROM wrc.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts DESC LIMIT 1",
+          "rawSql": "SELECT min_hazard_dist_m FROM motorsport.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts DESC LIMIT 1",
           "format": 1,
           "queryType": "table"
         }
@@ -294,7 +294,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT quantile(0.95)(inference_ms) FROM wrc.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts)",
+          "rawSql": "SELECT quantile(0.95)(inference_ms) FROM motorsport.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts)",
           "format": 1,
           "queryType": "table"
         }
@@ -358,7 +358,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT max(abs(sync_gap_ms)) FROM wrc.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts)",
+          "rawSql": "SELECT max(abs(sync_gap_ms)) FROM motorsport.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts)",
           "format": 1,
           "queryType": "table"
         }
@@ -422,7 +422,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT ts, speed_kmh, cv_speed_kmh FROM wrc.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
+          "rawSql": "SELECT ts, speed_kmh, cv_speed_kmh FROM motorsport.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
           "format": 0,
           "queryType": "timeseries"
         }
@@ -496,7 +496,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT ts, yaw_rate_deg_s, cv_yaw_rate_deg_s FROM wrc.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
+          "rawSql": "SELECT ts, yaw_rate_deg_s, cv_yaw_rate_deg_s FROM motorsport.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
           "format": 0,
           "queryType": "timeseries"
         }
@@ -570,7 +570,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT ts, min_hazard_dist_m FROM wrc.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
+          "rawSql": "SELECT ts, min_hazard_dist_m FROM motorsport.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
           "format": 0,
           "queryType": "timeseries"
         }
@@ -645,7 +645,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT ts, lateral_offset, cv_slip_angle_deg FROM wrc.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
+          "rawSql": "SELECT ts, lateral_offset, cv_slip_angle_deg FROM motorsport.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
           "format": 0,
           "queryType": "timeseries"
         }
@@ -725,7 +725,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT lat, lon, speed_kmh FROM wrc.telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
+          "rawSql": "SELECT lat, lon, speed_kmh FROM motorsport.telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
           "format": 1,
           "queryType": "table"
         }
@@ -796,7 +796,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT ts, frame_idx, round(min_hazard_dist_m) AS distance_m, n_hazards,\n       arrayStringConcat(arrayDistinct(arrayMap(d -> JSONExtractString(d, 'cls'),\n           arrayFilter(d -> JSONExtractBool(d, 'hazard'), JSONExtractArrayRaw(detections)))), ', ') AS objects\nFROM wrc.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts) AND min_hazard_dist_m < 20 ORDER BY ts DESC LIMIT 50",
+          "rawSql": "SELECT ts, frame_idx, round(min_hazard_dist_m) AS distance_m, n_hazards,\n       arrayStringConcat(arrayDistinct(arrayMap(d -> JSONExtractString(d, 'cls'),\n           arrayFilter(d -> JSONExtractBool(d, 'hazard'), JSONExtractArrayRaw(detections)))), ', ') AS objects\nFROM motorsport.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts) AND min_hazard_dist_m < 20 ORDER BY ts DESC LIMIT 50",
           "format": 1,
           "queryType": "table"
         }
@@ -829,7 +829,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT ts, inference_ms FROM wrc.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
+          "rawSql": "SELECT ts, inference_ms FROM motorsport.cv_events WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
           "format": 0,
           "queryType": "timeseries"
         }
