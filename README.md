@@ -15,6 +15,7 @@ GPS/IMU       ─► telemetry-producer ─────────────�
 - [x] Telemetry producer + live replay on a shared clock (`make demo`)
 - [x] Go ingester (Kafka → ClickHouse) + joined view `frames_with_telemetry`
 - [x] Grafana dashboard (auto-provisioned, live refresh)
+- [x] Lap comparison on real F1 data: where time was gained or lost, and why
 
 ## Quick start
 
@@ -25,6 +26,7 @@ make sample     # KITTI drive: front camera + GPS/IMU (~250 MB)
 make cv         # -> output/annotated.mp4 + output/events.jsonl
 make compare    # CV estimates vs real GPS/IMU
 make demo       # live replay: telemetry + CV events to Redpanda (SHOW=1 for preview)
+make laps       # real F1 laps compared: VER vs NOR, Abu Dhabi 2025 quali
 ```
 
 ## How video and telemetry stay in sync
@@ -40,11 +42,40 @@ Measured on the KITTI sample:
 | Frame time → CV event in Kafka (includes inference) | p50 32 ms, p95 39 ms |
 | Kafka → ClickHouse (Go ingester, 50 ms batches) | p50 12 ms, p95 ~15 ms |
 
+## Lap comparison: where time is won
+
+`make laps` takes two real laps and finds where one driver gains on the other, corner by corner:
+
+```
+make laps A=VER B=NOR EVENT="Yas Marina" YEAR=2025 SESSION=Qualifying
+
+VER 1:22.207  vs  NOR 1:22.408  (gap +0.201 s, track 5223 m)
+Delta checked against official sector times: max error 0.036 s, corrected
+
+C3  @ 2630 m  NOR loses 0.121 s  -  VER: brakes 15 m later
+C4  @ 3675 m  VER loses 0.047 s  -  NOR: full throttle 60 m earlier
+...
+```
+
+How it works:
+
+1. **Distance, not time.** Speed is integrated into distance, so both laps can be compared at the same point on track. The gap at each metre is the time difference there.
+2. **Corners** are the clear speed dips. A chicane with no real straight between its two dips counts as one corner.
+3. **Time per corner** is measured from the straight before to the straight after. This is where the gap line is most reliable.
+4. **Why**: braking point, minimum speed, where full throttle comes back, top speed after. Only differences above the data resolution are reported (15 m, 3 km/h).
+5. **Check against official timing.** The distance from integrated speed drifts a few metres, so the gap is compared with the official F1 sector times. Measured error over 6 laps: mean 0.03 s, max 0.10 s. The gap is then corrected to match them.
+
+The output goes to `output/laps_*.png` and to the Grafana dashboard **Lap Comparison**. That dashboard shows the gap, speed, throttle and brake by distance, a track map of who is faster every 200 m, and the corner table.
+
+The analysis only needs time, speed, throttle, brake and x/y per sample, so the same code works on game telemetry.
+
+Data: [OpenF1](https://openf1.org) (free historical data, no account). FastF1 needs a paid F1 TV login since 2026. Samples come about 4 times a second, so braking points are ±15 m. The gap line can swing inside slow corners, but the corner totals stay reliable.
+
 ## Recording your own rally data
 
 `scripts/record_udp_telemetry.py` records raw UDP telemetry from a racing game (plain Python, no installs) while OBS records the onboard video. Packets are stored raw with the PC clock time and decoded later.
 
-UIs: Grafana dashboard http://localhost:3000 (opens on the WRC dashboard, no login) · Redpanda Console http://localhost:8080
+UIs: Grafana http://localhost:3000 (WRC dashboard + Lap Comparison, no login) · Redpanda Console http://localhost:8080
 
 Run `make demo` and watch the dashboard update live (pick the newest run in the *Run* dropdown).
 

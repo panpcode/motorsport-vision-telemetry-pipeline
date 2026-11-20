@@ -120,7 +120,14 @@ dashboard = {
     "panels": panels,
 }
 
-out = os.path.join(os.path.dirname(__file__), "wrc_telemetry.json")
-with open(out, "w") as f:
-    json.dump(dashboard, f, indent=2)
-print(f"wrote {out}")
+
+
+def write(dash, name):
+    out = os.path.join(os.path.dirname(__file__), name)
+    with open(out, "w") as f:
+        json.dump(dash, f, indent=2)
+    print(f"wrote {out}")
+
+
+if __name__ == "__main__":
+    write(dashboard, "wrc_telemetry.json")

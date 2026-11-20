@@ -1,0 +1,887 @@
+{
+  "uid": "wrc-laps",
+  "title": "Lap Comparison",
+  "tags": [
+    "wrc",
+    "laps"
+  ],
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "comparison",
+        "label": "Comparison",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "clickhouse"
+        },
+        "query": "SELECT comparison FROM wrc.lap_grid GROUP BY comparison ORDER BY comparison",
+        "definition": "SELECT comparison FROM wrc.lap_grid GROUP BY comparison ORDER BY comparison",
+        "refresh": 1,
+        "hide": 0,
+        "current": {},
+        "options": []
+      },
+      {
+        "name": "a",
+        "label": "a",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "clickhouse"
+        },
+        "query": "SELECT any(driver_a) FROM wrc.lap_grid WHERE comparison = '${comparison}'",
+        "definition": "SELECT any(driver_a) FROM wrc.lap_grid WHERE comparison = '${comparison}'",
+        "refresh": 1,
+        "hide": 2,
+        "current": {},
+        "options": []
+      },
+      {
+        "name": "b",
+        "label": "b",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "clickhouse"
+        },
+        "query": "SELECT any(driver_b) FROM wrc.lap_grid WHERE comparison = '${comparison}'",
+        "definition": "SELECT any(driver_b) FROM wrc.lap_grid WHERE comparison = '${comparison}'",
+        "refresh": 1,
+        "hide": 2,
+        "current": {},
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Lap gap (${b} to ${a})",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "rawSql": "SELECT concat(toString(round(argMax(delta_s, distance_m), 3)), ' s') FROM wrc.lap_grid WHERE comparison = '${comparison}'",
+          "format": 1,
+          "queryType": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/"
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Biggest single gain",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 10,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "rawSql": "SELECT concat(faster, ' +', toString(round(abs(time_diff_s), 3)), ' s in C', toString(corner))\nFROM wrc.lap_corners WHERE comparison = '${comparison}' ORDER BY abs(time_diff_s) DESC LIMIT 1",
+          "format": 1,
+          "queryType": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/"
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "Corners won (${a} / ${b})",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "rawSql": "SELECT concat(toString(countIf(time_diff_s > 0)), ' / ', toString(countIf(time_diff_s < 0)))\nFROM wrc.lap_corners WHERE comparison = '${comparison}'",
+          "format": 1,
+          "queryType": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/"
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 18,
+      "type": "trend",
+      "title": "Gap by distance (above 0: ${a} ahead)",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 16,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "rawSql": "SELECT distance_m, delta_s FROM wrc.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
+          "format": 1,
+          "queryType": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "gradientMode": "opacity"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distance_m"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "lengthm"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "delta_s"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gap ${b} to ${a}"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "xField": "distance_m",
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": "trend",
+      "title": "Speed",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 16,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "rawSql": "SELECT distance_m, speed_a, speed_b FROM wrc.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
+          "format": 1,
+          "queryType": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "velocitykmh",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 0
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distance_m"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "lengthm"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "speed_a"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${a}"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "speed_b"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${b}"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "xField": "distance_m",
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "type": "trend",
+      "title": "Throttle",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 19,
+        "w": 16,
+        "h": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "rawSql": "SELECT distance_m, throttle_a, throttle_b FROM wrc.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
+          "format": 1,
+          "queryType": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 0
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distance_m"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "lengthm"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "throttle_a"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${a}"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "throttle_b"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${b}"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "xField": "distance_m",
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "type": "trend",
+      "title": "Brake",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 16,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "rawSql": "SELECT distance_m, brake_a, brake_b * -1 AS brake_b FROM wrc.lap_grid WHERE comparison = '${comparison}' ORDER BY distance_m",
+          "format": 1,
+          "queryType": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "lineInterpolation": "stepAfter",
+            "axisPlacement": "hidden"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "distance_m"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "lengthm"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "brake_a"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${a}"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "brake_b"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${b} (shown below 0)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "brake_a"
+            },
+            "properties": [
+              {
+                "id": "min",
+                "value": -1
+              },
+              {
+                "id": "max",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "brake_b"
+            },
+            "properties": [
+              {
+                "id": "min",
+                "value": -1
+              },
+              {
+                "id": "max",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "xField": "distance_m",
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "xychart",
+      "title": "Faster per 200 m",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 4,
+        "w": 8,
+        "h": 14
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "rawSql": "WITH ms AS (\n    SELECT intDiv(toUInt32(distance_m), 200) AS m, argMax(delta_s, distance_m) - argMin(delta_s, distance_m) AS gain\n    FROM wrc.lap_grid WHERE comparison = '${comparison}' GROUP BY m)\nSELECT g.x AS x, g.y AS a_faster\nFROM wrc.lap_grid g JOIN ms ON intDiv(toUInt32(g.distance_m), 200) = ms.m\nWHERE g.comparison = '${comparison}' AND ms.gain > 0 ORDER BY g.distance_m",
+          "format": 1,
+          "queryType": "table"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "B",
+          "editorType": "sql",
+          "rawSql": "WITH ms AS (\n    SELECT intDiv(toUInt32(distance_m), 200) AS m, argMax(delta_s, distance_m) - argMin(delta_s, distance_m) AS gain\n    FROM wrc.lap_grid WHERE comparison = '${comparison}' GROUP BY m)\nSELECT g.x AS x, g.y AS b_faster\nFROM wrc.lap_grid g JOIN ms ON intDiv(toUInt32(g.distance_m), 200) = ms.m\nWHERE g.comparison = '${comparison}' AND ms.gain <= 0 ORDER BY g.distance_m",
+          "format": 1,
+          "queryType": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "show": "points",
+            "pointSize": {
+              "fixed": 5
+            },
+            "axisPlacement": "hidden"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "a_faster"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${a}"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "b_faster"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "${b}"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "seriesMapping": "manual",
+        "series": [
+          {
+            "x": "x",
+            "y": "a_faster",
+            "frame": 0,
+            "name": "${a}"
+          },
+          {
+            "x": "x",
+            "y": "b_faster",
+            "frame": 1,
+            "name": "${b}"
+          }
+        ],
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "type": "text",
+      "title": "How to read this",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 18,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "rawSql": "",
+          "format": 0,
+          "queryType": "timeseries"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Two real laps (OpenF1), compared **by distance**, not by time.\n\n- **Gap**: going up = ${b} losing time there, going down = gaining it back.\n- **Corners** (table): time won between the straight before and the straight after.\n  *why* = what the faster driver did differently at that corner.\n- Checked against official F1 sector times (typically 0.03 s off, then corrected).\n\nData is ~4 samples/s, so braking points are \u00b115 m and the gap line\ncan swing inside slow corners. Corner totals are the reliable part."
+      }
+    },
+    {
+      "id": 23,
+      "type": "table",
+      "title": "Where time was won",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "rawSql": "SELECT corner AS C, round(apex_m) AS at_m, faster, round(abs(time_diff_s), 3) AS gain_s, why,\n       round(min_speed_a) AS min_kmh_${a}, round(min_speed_b) AS min_kmh_${b}\nFROM wrc.lap_corners WHERE comparison = '${comparison}' ORDER BY corner",
+          "format": 1,
+          "queryType": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 50
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "at_m"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "faster"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gain_s"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gain_s"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      },
+      "options": {}
+    }
+  ]
+}

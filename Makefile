@@ -5,7 +5,7 @@ CAM = --hfov 81 --cam-height 1.65
 PY = .venv/bin/python
 PYTHON ?= $(shell command -v python3.12 || echo python3)
 
-.PHONY: up down setup sample cv compare demo
+.PHONY: up down setup sample cv compare demo laps
 
 up:
 	docker compose up -d
@@ -15,7 +15,7 @@ down:
 
 setup:
 	$(PYTHON) -m venv .venv
-	.venv/bin/pip install -r services/cv-ai-worker/requirements.txt
+	.venv/bin/pip install -r services/cv-ai-worker/requirements.txt -r services/lap-analysis/requirements.txt
 
 # Download a KITTI drive: front camera + GPS/IMU (~250 MB)
 sample:
@@ -43,3 +43,13 @@ demo:
 		--realtime --run-id $$RUN --start-ms $$START --t0-ms $(T0) \
 		--timestamps ../../$(DRIVE)/image_02/timestamps.txt $(if $(SHOW),--show); \
 	wait
+
+# Real F1 lap comparison (OpenF1): where time was gained/lost. Shows in Grafana > Lap Comparison
+YEAR ?= 2025
+EVENT ?= Yas Marina
+SESSION ?= Qualifying
+A ?= VER
+B ?= NOR
+laps:
+	cd services/lap-analysis && ../../$(PY) -m laps.main $(A) $(B) --year $(YEAR) --event "$(EVENT)" \
+		--session $(SESSION) --out ../../output --clickhouse http://localhost:8123
