@@ -1,5 +1,7 @@
 import argparse
 import json
+import os
+import re
 import time
 import uuid
 from datetime import datetime
@@ -19,6 +21,14 @@ def kitti_ts_ms(line):
     return datetime.strptime(line.strip()[:26], "%Y-%m-%d %H:%M:%S.%f").timestamp() * 1000
 
 
+def obs_start_ms(path):
+    # OBS names recordings by their start time, local clock: "2026-11-23 18-30-12.mp4"
+    m = re.search(r"(\d{4}-\d{2}-\d{2})[ _](\d{2}-\d{2}-\d{2})", os.path.basename(path))
+    if not m:
+        raise SystemExit(f"no OBS start time in file name: {path}")
+    return datetime.strptime(" ".join(m.groups()), "%Y-%m-%d %H-%M-%S").timestamp() * 1000
+
+
 def parse_args():
     p = argparse.ArgumentParser(description="Onboard video -> CV events")
     p.add_argument("video", help="path to onboard .mp4")
@@ -34,6 +44,9 @@ def parse_args():
     p.add_argument("--timestamps", help="KITTI timestamps.txt with the real time of each frame")
     p.add_argument("--start-ms", type=int, help="wall clock time of the first frame (default: now)")
     p.add_argument("--t0-ms", type=float, help="source time that maps to --start-ms (default: first frame)")
+    p.add_argument("--obs-start", action="store_true", help="recording start time from the OBS file name")
+    p.add_argument("--calib", help="sync.json from scripts/sync_video.py: hfov, cam_height, offset_ms")
+    p.add_argument("--stride", type=int, default=1, help="process every Nth frame (60 fps video: 2)")
     p.add_argument("--realtime", action="store_true", help="pace frames like a live stream")
     p.add_argument("--show", action="store_true", help="open a preview window")
     p.add_argument("--max-frames", type=int, default=0)
@@ -42,6 +55,11 @@ def parse_args():
 
 def main():
     args = parse_args()
+    offset_ms = 0.0
+    if args.calib and os.path.exists(args.calib):
+        cal = json.load(open(args.calib))
+        args.hfov, args.cam_height, offset_ms = cal["hfov"], cal["cam_height"], cal["offset_ms"]
+        print(f"calibration: hfov {args.hfov}, cam height {args.cam_height} m, video offset {offset_ms:+.0f} ms")
     cap = cv2.VideoCapture(args.video)
     if not cap.isOpened():
         raise SystemExit(f"cannot open {args.video}")
@@ -51,7 +69,7 @@ def main():
     detector = HazardDetector(args.model, hfov_deg=args.hfov, device=args.device)
     detector.warmup(w, h)
     road_tracker = RoadTracker()
-    motion = MotionEstimator(fps, hfov_deg=args.hfov, cam_height_m=args.cam_height)
+    motion = MotionEstimator(fps / args.stride, hfov_deg=args.hfov, cam_height_m=args.cam_height)
     print(f"video {w}x{h} @ {fps:.0f}fps, device={detector.device}")
 
     sinks = []
@@ -61,17 +79,27 @@ def main():
         sinks.append(KafkaSink(args.kafka, args.topic))
     writer = None
     if args.out:
-        writer = cv2.VideoWriter(args.out, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
+        writer = cv2.VideoWriter(args.out, cv2.VideoWriter_fourcc(*"mp4v"), fps / args.stride, (w, h))
 
     run_id = args.run_id or uuid.uuid4().hex[:8]
 
-    # Source time of each frame: from the timestamps file, else from fps
+    # Source time of each frame: from the timestamps file, else first frame time + idx / fps
     if args.timestamps:
         frame_src_ms = [kitti_ts_ms(s) for s in open(args.timestamps) if s.strip()]
     else:
         frame_src_ms = None
-    t0 = args.t0_ms if args.t0_ms is not None else (frame_src_ms[0] if frame_src_ms else 0.0)
-    start_ms = args.start_ms or int(time.time() * 1000)
+    video_start = obs_start_ms(args.video) + offset_ms if args.obs_start else None
+    t0 = args.t0_ms if args.t0_ms is not None else (
+        frame_src_ms[0] if frame_src_ms else (video_start or 0.0))
+    first_ms = video_start if video_start is not None else t0
+    src_time = lambda i: frame_src_ms[i] if frame_src_ms else first_ms + i * 1000 / fps
+    # Live replay maps source time to now; offline OBS runs keep the recording's own clock
+    start_ms = args.start_ms or (t0 if video_start is not None else int(time.time() * 1000))
+    if args.events:
+        # Settings these events were made with, for scripts/sync_video.py
+        meta = {"video_start_ms": video_start, "offset_ms": offset_ms, "hfov": args.hfov, "cam_height": args.cam_height,
+                "fps": fps, "stride": args.stride, "smooth": motion.smooth}
+        json.dump(meta, open(os.path.splitext(args.events)[0] + ".meta.json", "w"), indent=2)
     infer_times, loop_times = [], []
     idx = 0
 
@@ -88,8 +116,7 @@ def main():
         mot = motion.update(frame, ignore_boxes=[d["bbox"] for d in detections])
 
         # Recorded frame time, shifted to the replay clock (same rule as the telemetry producer)
-        src_ms = frame_src_ms[idx] if frame_src_ms else t0 + idx * 1000 / fps
-        ts_ms = int(start_ms + (src_ms - t0))
+        ts_ms = int(start_ms + (src_time(idx) - t0))
         event = {
             "run_id": run_id,
             "frame_idx": idx,
@@ -123,10 +150,12 @@ def main():
                     break
 
         idx += 1
+        for _ in range(args.stride - 1):  # skip frames without decoding them
+            if cap.grab():
+                idx += 1
         if args.realtime and (not frame_src_ms or idx < len(frame_src_ms)):
             # Wait until the next frame's slot in "live" time
-            next_ms = frame_src_ms[idx] if frame_src_ms else t0 + idx * 1000 / fps
-            delay = (start_ms + next_ms - t0) / 1000 - time.time()
+            delay = (start_ms + src_time(idx) - t0) / 1000 - time.time()
             if delay > 0:
                 time.sleep(delay)
 

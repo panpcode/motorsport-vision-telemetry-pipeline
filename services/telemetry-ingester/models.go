@@ -17,6 +17,14 @@ type Telemetry struct {
 	SteeringDeg *float32 `json:"steering_deg"`
 	Throttle    *float32 `json:"throttle"`
 	Brake       *float32 `json:"brake"`
+	// Games only (Forza)
+	X            *float32 `json:"x"`
+	Y            *float32 `json:"y"`
+	Lap          *uint16  `json:"lap"`
+	Gear         *uint8   `json:"gear"`
+	Rpm          *float32 `json:"rpm"`
+	Steer        *float32 `json:"steer"`
+	SlipAngleDeg *float32 `json:"slip_angle_deg"`
 }
 
 // Message from topic motorsport.cv.events

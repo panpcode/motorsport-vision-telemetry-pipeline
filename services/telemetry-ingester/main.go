@@ -141,13 +141,16 @@ func insertTelemetry(ctx context.Context, ch driver.Conn, rows []Telemetry) erro
 	if len(rows) == 0 {
 		return nil
 	}
-	b, err := ch.PrepareBatch(ctx, "INSERT INTO telemetry")
+	b, err := ch.PrepareBatch(ctx, "INSERT INTO telemetry (run_id, ts, speed_kmh, yaw_rate_deg_s, "+
+		"accel_long, accel_lat, heading_deg, lat, lon, alt, steering_deg, throttle, brake, "+
+		"x, y, lap, gear, rpm, steer, slip_angle_deg)")
 	if err != nil {
 		return err
 	}
 	for _, r := range rows {
 		if err := b.Append(r.RunID, ms(r.TsMs), r.SpeedKmh, r.YawRateDegS, r.AccelLong, r.AccelLat,
-			r.HeadingDeg, r.Lat, r.Lon, r.Alt, r.SteeringDeg, r.Throttle, r.Brake); err != nil {
+			r.HeadingDeg, r.Lat, r.Lon, r.Alt, r.SteeringDeg, r.Throttle, r.Brake,
+			r.X, r.Y, r.Lap, r.Gear, r.Rpm, r.Steer, r.SlipAngleDeg); err != nil {
 			return err
 		}
 	}
@@ -158,7 +161,8 @@ func insertCV(ctx context.Context, ch driver.Conn, rows []CVEvent) error {
 	if len(rows) == 0 {
 		return nil
 	}
-	b, err := ch.PrepareBatch(ctx, "INSERT INTO cv_events")
+	b, err := ch.PrepareBatch(ctx, "INSERT INTO cv_events (run_id, ts, frame_idx, inference_ms, n_detections, "+
+		"n_hazards, min_hazard_dist_m, lateral_offset, apex_dist, yaw_rate_deg_s, slip_angle_deg, speed_est_kmh, detections)")
 	if err != nil {
 		return err
 	}

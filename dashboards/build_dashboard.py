@@ -74,10 +74,12 @@ panels = [
                  "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": None}, {"color": "orange", "value": 15}, {"color": "green", "value": 30}]},
                  "custom": {"drawStyle": "points", "pointSize": 6, "thresholdsStyle": {"mode": "line+area"}}}),
     panel("Road position & slip", "timeseries",
-          f"SELECT ts, lateral_offset, cv_slip_angle_deg FROM motorsport.frames_with_telemetry WHERE {RUN} AND $__timeFilter(ts) ORDER BY ts",
+          f"SELECT ts, lateral_offset, cv_slip_angle_deg, slip_angle_deg FROM motorsport.frames_with_telemetry WHERE {RUN} AND $__timeFilter(ts) ORDER BY ts",
           12, 12, 12, 8,
           overrides=[rename("lateral_offset", "Lateral offset (-1 left edge, +1 right edge)", "green"),
-                     rename("cv_slip_angle_deg", "Slip angle", "purple", right_axis_unit="degree")]),
+                     rename("cv_slip_angle_deg", "Slip angle (video)", "purple", right_axis_unit="degree"),
+                     # Only games have the true value
+                     rename("slip_angle_deg", "Slip angle (game)", "blue", right_axis_unit="degree")]),
 
     # Row 4: map + hazard log
     panel("GPS track", "geomap",

@@ -16,6 +16,8 @@ GPS/IMU       ─► telemetry-producer ─────────────�
 - [x] Go ingester (Kafka → ClickHouse) + joined view `frames_with_telemetry`
 - [x] Grafana dashboard (auto-provisioned, live refresh)
 - [x] Lap comparison on real F1 data: where time was gained or lost, and why
+- [x] Own data from Forza Motorsport (Xbox): decoder, lap comparison, automatic video sync + camera calibration
+- [ ] First recorded Forza session (numbers will go here once measured)
 
 ## Quick start
 
@@ -31,7 +33,7 @@ make laps       # real F1 laps compared: VER vs NOR, Abu Dhabi 2025 quali
 
 ## How video and telemetry stay in sync
 
-Both streams carry their recorded timestamps. On replay, both services map them onto the same wall clock (`ts = start + (recorded − t0)`), with the same `run_id`, `start` and `t0` passed by `make demo`. The Go ingester writes both to ClickHouse, and the view `motorsport.frames_with_telemetry` joins each frame to its nearest telemetry sample (`ASOF JOIN`).
+Both streams carry their recorded timestamps. On replay, both services map them onto the same wall clock (`ts = start + (recorded − t0)`), with the same `run_id`, `start` and `t0` passed by `make demo`. The Go ingester writes both to ClickHouse, and the view `motorsport.frames_with_telemetry` joins each frame to its nearest telemetry sample, before or after it (two `ASOF JOIN`s), so it works for any sample rate (KITTI 10 Hz, Forza 60 Hz). Frames with no sample within 200 ms are left out. After a schema change, `make migrate` applies it to a running ClickHouse.
 
 Measured on the KITTI sample:
 
@@ -71,9 +73,37 @@ The analysis only needs time, speed, throttle, brake and x/y per sample, so the 
 
 Data: [OpenF1](https://openf1.org) (free historical data, no account). FastF1 needs a paid F1 TV login since 2026. Samples come about 4 times a second, so braking points are ±15 m. The gap line can swing inside slow corners, but the corner totals stay reliable.
 
-## Recording your own rally data
+## Own data: Forza Motorsport on Xbox
 
-`scripts/record_udp_telemetry.py` records raw UDP telemetry from a racing game (plain Python, no installs) while OBS records the onboard video. Packets are stored raw with the PC clock time and decoded later.
+Video and telemetry from the same drive, with true values for everything the CV worker estimates (speed, yaw rate, slip angle) at 60 Hz.
+
+```
+Xbox ─HDMI─► Elgato capture card ─USB─► Mac: OBS records the video (1080p60, bumper camera)
+Xbox ─"Data Out" UDP (Wi-Fi/LAN)─────► Mac: record_udp_telemetry.py stores raw packets + PC clock time
+```
+
+In the game: Settings → Gameplay & HUD → Data Out **On**, IP = the Mac's address, port `5300`. Then:
+
+```bash
+python3 scripts/record_udp_telemetry.py --port 5300   # while driving; OBS records at the same time
+# put telemetry_*.csv and the OBS .mp4 in one folder, e.g. sample-data/forza/2026-11-23_monza
+make forza-decode FORZA=sample-data/forza/2026-11-23_monza   # raw packets -> telemetry.csv, lap times
+make forza-laps   FORZA=...   # fastest vs second fastest lap, corner by corner (Grafana: Lap Comparison)
+make forza-cv     FORZA=...   # CV on the video
+make forza-sync   FORZA=...   # exact video offset + camera FOV/height -> sync.json
+make forza-cv     FORZA=...   # again, now calibrated
+make forza-sync   FORZA=...   # final accuracy: video vs game
+make forza-demo   FORZA=...   # live replay through Kafka -> ClickHouse -> Grafana
+```
+
+How it works:
+
+- **Store raw, decode later.** Packets are saved as they arrive. `decode_forza.py` reads them (Forza Motorsport 2023 and 7 layouts) into one CSV with the project's units and signs. Wi-Fi delays packets by a few ms, sometimes 50+, so each sample uses the game's own clock, shifted to the PC clock by the smallest delay seen in each 2 s window.
+- **Video start.** OBS names the file by its start time, to the second. The capture card and OBS add a delay on top. `sync_video.py` finds the exact offset by matching the yaw rate seen in the video to the game's yaw rate (cross-correlation). Before matching, the game signal gets the same smoothing and frame timing as the CV worker, so the worker's own lag cancels out.
+- **Camera calibration.** Video yaw scales with focal length, video speed with focal length × camera height. Fitting both against the game gives the camera's real FOV and height, without a calibration target.
+- **Lap comparison** uses the same code as F1. The lap time comes from the game, and the integrated distance is checked against the game's odometer.
+
+Tested on synthetic packets and video estimates with a known offset and camera: the offset, FOV and height came back exact. Real numbers go in the tables above once a session is recorded.
 
 UIs: Grafana http://localhost:3000 (Vision + Telemetry and Lap Comparison dashboards, no login) · Redpanda Console http://localhost:8080
 

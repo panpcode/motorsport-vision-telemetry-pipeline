@@ -1,5 +1,6 @@
 """Replays recorded car telemetry to Kafka as if it was live."""
 import argparse
+import csv
 import json
 import math
 import os
@@ -29,9 +30,22 @@ def load_kitti(drive):
         }
 
 
+# Columns of telemetry.csv (scripts/decode_forza.py) that go to Kafka as they are
+CSV_FLOATS = ["speed_kmh", "yaw_rate_deg_s", "accel_long", "accel_lat", "heading_deg", "throttle", "brake",
+              "x", "y", "rpm", "steer", "slip_angle_deg"]
+
+
+def load_csv(path):
+    """Yields (source_ts_ms, sample) from game telemetry.csv."""
+    for r in csv.DictReader(open(path)):
+        sample = {k: float(r[k]) if r[k] != "" else None for k in CSV_FLOATS}
+        sample.update(lap=int(r["lap"]), gear=int(r["gear"]))
+        yield float(r["ts_ms"]), sample
+
+
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("drive", help="KITTI drive folder")
+    p.add_argument("source", help="KITTI drive folder, or game telemetry.csv")
     p.add_argument("--kafka", help="brokers, e.g. localhost:19092 (else print JSON)")
     p.add_argument("--topic", default="motorsport.telemetry")
     p.add_argument("--run-id", default="dev")
@@ -40,7 +54,7 @@ def main():
     p.add_argument("--no-wait", action="store_true", help="send as fast as possible")
     args = p.parse_args()
 
-    samples = list(load_kitti(args.drive))
+    samples = list(load_csv(args.source) if args.source.endswith(".csv") else load_kitti(args.source))
     start_ms = args.start_ms or int(time.time() * 1000)
     t0 = args.t0_ms if args.t0_ms is not None else samples[0][0]
 

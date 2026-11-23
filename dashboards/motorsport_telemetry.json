@@ -645,7 +645,7 @@
           },
           "refId": "A",
           "editorType": "sql",
-          "rawSql": "SELECT ts, lateral_offset, cv_slip_angle_deg FROM motorsport.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
+          "rawSql": "SELECT ts, lateral_offset, cv_slip_angle_deg, slip_angle_deg FROM motorsport.frames_with_telemetry WHERE run_id = '${run_id}' AND $__timeFilter(ts) ORDER BY ts",
           "format": 0,
           "queryType": "timeseries"
         }
@@ -680,13 +680,40 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Slip angle"
+                "value": "Slip angle (video)"
               },
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "purple"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "degree"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "slip_angle_deg"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Slip angle (game)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
                 }
               },
               {
