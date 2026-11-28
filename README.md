@@ -65,6 +65,8 @@ Measured on the KITTI sample:
 
 `make laps` takes two real laps and finds where one driver gains on the other, corner by corner:
 
+![Lap comparison: VER vs NOR, Abu Dhabi 2025 qualifying](docs/images/lap_comparison_yas_marina.png)
+
 ```
 make laps A=VER B=NOR EVENT="Yas Marina" YEAR=2025 SESSION=Qualifying
 
@@ -132,9 +134,11 @@ Run `make demo` and watch the dashboard update live (pick the newest run in the 
 
 Video sources need real telemetry recorded with them to be useful here; broadcast onboards don't have it. The sample uses a **KITTI raw** drive: front camera frames plus GPS/IMU (speed, yaw rate, position) with timestamps for every frame. `make sample` fetches only those files from the archive, not the full 1.2 GB.
 
-> KITTI raw data © Geiger, Lenz, Stiller, Urtasun — *Vision meets Robotics: The KITTI Dataset*, IJRR 2013. Licensed [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/). Not included in this repo.
+> KITTI raw data © Geiger, Lenz, Stiller, Urtasun — *Vision meets Robotics: The KITTI Dataset*, IJRR 2013. Licensed [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/). The data is not included in this repo; the annotated frame below is shared under the same license.
 
 ## What the CV worker measures
+
+![CV worker on a KITTI frame: on-road hazards in red, road area, live estimates](docs/images/cv_worker_kitti.png)
 
 | Field | How |
 |---|---|
