@@ -24,6 +24,8 @@ GPS/IMU       ─► telemetry-producer ─────────────�
 
 ## Status
 
+**Work in progress** until the real-time Forza recording is done.
+
 - [x] Infra: Redpanda, ClickHouse, Grafana, LocalStack (`docker compose`)
 - [x] CV worker: detection, road edges, optical flow, Kafka output
 - [x] Sample data with real telemetry (KITTI) + accuracy check
@@ -32,7 +34,7 @@ GPS/IMU       ─► telemetry-producer ─────────────�
 - [x] Grafana dashboard (auto-provisioned, live refresh)
 - [x] Lap comparison on real F1 data: where time was gained or lost, and why
 - [x] Own data from Forza Motorsport (Xbox): decoder, lap comparison, automatic video sync + camera calibration
-- [ ] First recorded Forza session (numbers will go here once measured)
+- Real-time Forza recording: pending
 
 ## Quick start
 
