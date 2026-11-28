@@ -108,6 +108,8 @@ func main() {
 			continue
 		}
 
+		// At-least-once: Kafka offsets are committed only after ClickHouse has the rows, so nothing is lost.
+		// If one insert fails after the other succeeded, the batch is read again and can be written twice.
 		if err := insertTelemetry(ctx, ch, tel); err != nil {
 			log.Printf("insert telemetry: %v", err) // not committed, will be re-read
 			continue

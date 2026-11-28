@@ -19,6 +19,7 @@ class KafkaSink:
         self.topic = topic
 
     def send(self, event):
+        # Key = run_id: a run always goes to the same partition, so its frames stay in order
         self.p.produce(self.topic, key=event["run_id"], value=json.dumps(event))
         self.p.poll(0)
 

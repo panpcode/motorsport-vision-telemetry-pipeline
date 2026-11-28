@@ -1,6 +1,21 @@
 # motorsport-vision-telemetry-pipeline
 
-Data tools for motorsport (rally, circuit racing): onboard video turned into real-time data (hazards, road position, yaw/slip and speed from the image alone) streamed next to car telemetry, plus lap comparison that shows where a driver gains or loses time.
+Turns an onboard camera into a data channel, puts it on the same timeline as the car's telemetry, and shows where a lap is won or lost.
+
+## What it is for
+
+Rally and endurance teams log hundreds of car channels, but onboard video is mostly watched, not measured. This project treats the camera as one more sensor:
+
+- **Video as data.** From the image alone: objects on the road and how far away they are, position across the road, distance to the apex, yaw rate, slip angle and speed. Useful where sensors are missing or need a cross-check: a camera-only test, a recce car, an onboard without telemetry.
+- **One timeline.** Video and telemetry are aligned to the millisecond, so every frame can be read next to what the car was doing at that moment, live or after the run.
+- **Where the time goes.** Two laps compared by distance: the gap at every metre, the time won or lost in each corner, and why (braking point, minimum speed, when full throttle comes back).
+
+## What you get
+
+- The whole stack on a laptop with one command (`make up`): Kafka-compatible broker, ClickHouse, Grafana dashboards. No cloud account.
+- Live replay of a recorded run through the full streaming path, from camera frame to database in about 45 ms (p50).
+- Accuracy measured against real ground truth (KITTI GPS/IMU, official F1 sector times, game telemetry), with the weak spots stated.
+- The same analysis on real F1 data (OpenF1) and on your own laps from a racing game (Forza Motorsport on Xbox).
 
 ```
 camera frames ─► cv-ai-worker (YOLOv8 + OpenCV) ─► Redpanda ─► ingester (Go) ─► ClickHouse ─► Grafana

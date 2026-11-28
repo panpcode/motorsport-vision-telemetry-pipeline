@@ -1,4 +1,5 @@
 -- Car telemetry (from the producer). Columns a dataset doesn't have stay NULL.
+-- ORDER BY (run_id, ts): queries read one run over a time range, so rows are stored that way (it is also the index).
 CREATE TABLE IF NOT EXISTS motorsport.telemetry
 (
     run_id          LowCardinality(String),

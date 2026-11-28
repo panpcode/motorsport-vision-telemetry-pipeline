@@ -123,6 +123,7 @@ def anchor_to_sectors(a, delta, lap_a, lap_b):
 
 
 def compare(lap_a, lap_b):
+    # Compare by distance, not time: at the same second the two cars are at different places on track
     length = add_distance(lap_a)["d"][-1]   # A is the reference
     a = to_grid(lap_a, length)
     v = smooth(a["speed"])
